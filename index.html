@@ -3,66 +3,125 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resource Library -M. Cole</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/w3-css/4.15/w3.css" rel="stylesheet">
+  <title>My Resource Library</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/w3-css/4.15/w3.css">
+  <script>
+    // 🔧 Replace these values with your actual GitHub info
+    const username = "Akono-Flow";
+    const repo = "teaching-resources";
+    const branch = "main"; // or "master" if applicable
+
+    let currentPath = "";
+    let currentItems = [];
+
+    // 🧭 Render breadcrumb navigation
+    function renderBreadcrumb() {
+      const breadcrumb = document.getElementById("breadcrumb");
+      const parts = currentPath.split("/").filter(Boolean);
+      breadcrumb.innerHTML = '<a href="#" onclick="navigateTo(\'\')">🏠 Home</a>';
+
+      let cumulativePath = "";
+      for (const part of parts) {
+        cumulativePath += (cumulativePath ? "/" : "") + part;
+        breadcrumb.innerHTML +=
+          ` / <a href="#" onclick="navigateTo('${cumulativePath}')">${part}</a>`;
+      }
+    }
+
+    // 🗂️ Fetch folder contents from GitHub API
+    async function fetchFolderContents(path = "") {
+      const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/${path}?ref=${branch}`;
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Failed to load contents");
+      currentItems = await response.json();
+      currentPath = path;
+      renderBreadcrumb();
+      renderFileList();
+    }
+
+    // 📋 Render files and folders in the list
+    function renderFileList(filterText = "") {
+      const container = document.getElementById("file-list");
+      container.innerHTML = "";
+
+      const filtered = currentItems.filter(item =>
+        item.name.toLowerCase().includes(filterText.toLowerCase())
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = "<p class='w3-text-grey'>No matching files or folders.</p>";
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      ul.className = "w3-ul w3-card w3-white";
+
+      for (const item of filtered) {
+        const li = document.createElement("li");
+        li.className = "w3-padding-16";
+
+        if (item.type === "dir") {
+          li.innerHTML = `📂 <a href="#" onclick="navigateTo('${item.path}')">${item.name}</a>`;
+        } else {
+          const fileUrl = `https://raw.githubusercontent.com/${username}/${repo}/${branch}/${item.path}`;
+          li.innerHTML = `📄 <a href="${fileUrl}" target="_blank">${item.name}</a>`;
+        }
+
+        ul.appendChild(li);
+      }
+
+      container.appendChild(ul);
+    }
+
+    // 🔍 Search files and folders
+    function handleSearch(event) {
+      const searchText = event.target.value;
+      renderFileList(searchText);
+    }
+
+    // 🧭 Navigate into or back out of folders
+    function navigateTo(path) {
+      fetchFolderContents(path);
+    }
+
+    window.onload = () => fetchFolderContents();
+  </script>
 </head>
 <body class="w3-light-grey">
 
-<header class="w3-container w3-blue w3-center w3-padding-32">
-  <h1 class="w3-xxlarge">Cole Resource Library</h1>
-  <p>Chemistry resource materials</p>
-</header>
+  <!-- Header -->
+  <header class="w3-container w3-blue w3-center w3-padding-32">
+    <h1 class="w3-xxlarge">Resource Library - M Cole</h1>
+    <p>Automatically updated from my GitHub repository</p>
+  </header>
 
-<div class="w3-content w3-padding">
+  <div class="w3-content w3-padding">
 
-  <div class="w3-row-padding">
-
-    <div class="w3-third w3-margin-bottom">
-      <div class="w3-card w3-white w3-padding">
-        <h3>Chemistry</h3>
-        <ul>
-          <li><a href="chemistry/notes.pdf" target="_blank">Notes (PDF)</a></li>
-          <li><a href="chemistry/lab-manual.pdf" target="_blank">Lab Manual</a></li>
-        </ul>
-      </div>
+    <!-- Breadcrumb -->
+    <div class="w3-margin-bottom w3-padding-small w3-small">
+      <span id="breadcrumb" class="w3-text-blue"></span>
     </div>
 
-    <div class="w3-third w3-margin-bottom">
-      <div class="w3-card w3-white w3-padding">
-        <h3>Physics</h3>
-        <ul>
-          <li><a href="physics/worksheet.docx" target="_blank">Worksheet (DOCX)</a></li>
-        </ul>
-      </div>
+    <!-- Search bar -->
+    <div class="w3-margin-bottom">
+      <input
+        type="text"
+        class="w3-input w3-border w3-round"
+        placeholder="Search files or folders..."
+        oninput="handleSearch(event)"
+      >
     </div>
 
-    <div class="w3-third w3-margin-bottom">
-      <div class="w3-card w3-white w3-padding">
-        <h3>Biology</h3>
-        <ul>
-          <li><a href="biology/diagrams.png" target="_blank">Diagrams (Image)</a></li>
-        </ul>
-      </div>
-    </div>
+    <!-- File list -->
+    <div id="file-list"></div>
 
   </div>
 
-  <div class="w3-row-padding">
-    <div class="w3-third w3-margin-bottom">
-      <div class="w3-card w3-white w3-padding">
-        <h3>Miscellaneous</h3>
-        <ul>
-          <li><a href="misc/timetable.pdf" target="_blank">Timetable (PDF)</a></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<footer class="w3-container w3-center w3-blue w3-padding">
-  <p>Hosted with ❤️ using GitHub Pages</p>
-</footer>
+  <!-- Footer -->
+  <footer class="w3-container w3-center w3-blue w3-padding">
+    <p>Hosted with ❤️ using GitHub Pages + GitHub API</p>
+  </footer>
 
 </body>
 </html>
+
